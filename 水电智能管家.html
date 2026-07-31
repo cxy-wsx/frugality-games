@@ -28,7 +28,7 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 .room-bedroom::after{content:'🛏️';position:absolute;font-size:80px;opacity:.08;}
 
 /* HUD */
-#hud{position:absolute;top:0;left:0;width:100%;padding:12px 20px;display:none;justify-content:space-between;align-items:center;z-index:50;pointer-events:none;}
+#hud{position:absolute;top:0;left:0;width:100%;padding:12px 20px;display:none;justify-content:space-between;align-items:center;z-index:50;pointer-events:none;flex-wrap:wrap;gap:8px;}
 .hud-card{background:rgba(0,0,0,.6);backdrop-filter:blur(6px);border-radius:10px;padding:8px 16px;color:#fff;display:flex;align-items:center;gap:8px;}
 .hud-card .label{font-size:13px;opacity:.7;}
 .hud-card .value{font-size:22px;font-weight:bold;}
@@ -36,6 +36,11 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 .hud-card.water .value{color:#4FC3F7;}
 .hud-card.elec .value{color:#FFEE58;}
 .hud-card.timer .value{color:#FF8A65;}
+.hud-card.combo .value{color:#FF6B35;}
+
+/* 连击显示动画 */
+.hud-card.combo{animation:comboGlow .5s infinite alternate;}
+@keyframes comboGlow{from{box-shadow:0 0 5px rgba(255,107,53,.3);}to{box-shadow:0 0 20px rgba(255,107,53,.6);}}
 
 /* 游戏物品 */
 .game-item{position:absolute;width:70px;height:70px;cursor:pointer;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:itemAppear .3s ease-out;transition:transform .15s;}
@@ -55,11 +60,22 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 .light-ray{position:absolute;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,238,88,.2),transparent 70%);animation:rayPulse 1s infinite;pointer-events:none;}
 @keyframes rayPulse{0%,100%{transform:scale(1);opacity:.5;}50%{transform:scale(1.2);opacity:.8;}}
 
+/* 电视闪烁动画 */
+.game-item.tv .item-icon{animation:tvFlicker .4s infinite alternate;text-shadow:0 0 8px #42A5F5,0 0 16px #42A5F5;}
+@keyframes tvFlicker{from{filter:drop-shadow(0 0 5px #42A5F5) brightness(1);}to{filter:drop-shadow(0 0 12px #42A5F5) brightness(1.3);}}
+.tv-screen{position:absolute;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(66,165,245,.15),transparent 70%);animation:rayPulse 1.2s infinite;pointer-events:none;}
+
+/* 太阳能板奖励 */
+.game-item.solar .item-icon{animation:solarSpin 2s linear infinite;text-shadow:0 0 15px #FFD700,0 0 25px #FFA500;}
+@keyframes solarSpin{from{transform:rotate(0deg) scale(1);}50%{transform:rotate(180deg) scale(1.1);}to{transform:rotate(360deg) scale(1);}}
+.solar-glow{position:absolute;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(255,215,0,.25),transparent 70%);animation:rayPulse 1.5s infinite;pointer-events:none;}
+
 /* 危险进度条 */
 .danger-bar{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);width:50px;height:5px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;}
 .danger-fill{height:100%;width:0%;border-radius:3px;transition:width .1s linear;}
 .game-item.faucet .danger-fill{background:linear-gradient(90deg,#4FC3F7,#F44336);}
 .game-item.light .danger-fill{background:linear-gradient(90deg,#FFEE58,#F44336);}
+.game-item.tv .danger-fill{background:linear-gradient(90deg,#42A5F5,#F44336);}
 
 /* 修复效果 */
 .fix-effect{position:absolute;width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:#4CAF50;z-index:20;pointer-events:none;animation:fixAnim .8s ease-out forwards;}
@@ -79,6 +95,8 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 .overlay .tips p{color:#ddd;font-size:16px;line-height:2.2;text-align:left;}
 .overlay .tips p strong{color:#4FC3F7;}
 .overlay .tips p em{color:#FFEE58;font-style:normal;}
+.overlay .tips p .tv-tag{color:#42A5F5;font-style:normal;font-weight:bold;}
+.overlay .tips p .solar-tag{color:#FFD700;font-style:normal;font-weight:bold;}
 .btn{padding:14px 50px;font-size:22px;font-weight:bold;color:#fff;background:linear-gradient(135deg,#26C6DA,#42A5F5);border:none;border-radius:30px;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 15px rgba(38,198,218,.4);font-family:inherit;}
 .btn:hover{transform:scale(1.05);box-shadow:0 6px 25px rgba(38,198,218,.6);}
 .btn:active{transform:scale(.98);}
@@ -90,10 +108,16 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 #eduTip p{font-size:15px;color:#333;line-height:1.6;}
 #eduTip .source{font-size:12px;color:#888;margin-top:6px;}
 
+/* 连击中央提示 */
+#comboFlash{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);z-index:58;pointer-events:none;opacity:0;transition:opacity .2s;}
+#comboFlash.show{opacity:1;animation:comboFlashAnim .6s ease-out forwards;}
+@keyframes comboFlashAnim{0%{opacity:0;transform:translate(-50%,-50%) scale(.3);}30%{opacity:1;transform:translate(-50%,-50%) scale(1.2);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.5);}}
+#comboFlash .cf-text{font-size:40px;font-weight:bold;color:#FF6B35;text-shadow:3px 3px 0 #000,0 0 20px rgba(255,107,53,.7);}
+
 /* 游戏结束 */
 #gameOverBox{text-align:center;}
 #gameOverBox .finalScore{font-size:56px;color:#FFD700;text-shadow:2px 2px 0 #B8860B;margin:10px 0;}
-#gameOverBox .stats{display:flex;gap:30px;justify-content:center;margin:20px 0;}
+#gameOverBox .stats{display:flex;gap:30px;justify-content:center;margin:20px 0;flex-wrap:wrap;}
 #gameOverBox .stat{background:rgba(255,255,255,.06);border-radius:10px;padding:16px 28px;}
 #gameOverBox .stat .stat-icon{font-size:32px;}
 #gameOverBox .stat .stat-val{font-size:24px;font-weight:bold;color:#fff;margin-top:4px;}
@@ -121,8 +145,12 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 <div class="hud-card score"><span style="font-size:20px;">⭐</span><div><div class="label">得分</div><div class="value" id="scoreVal">0</div></div></div>
 <div class="hud-card water"><span style="font-size:20px;">💧</span><div><div class="label">节水(L)</div><div class="value" id="waterVal">0</div></div></div>
 <div class="hud-card elec"><span style="font-size:20px;">⚡</span><div><div class="label">节电(kWh)</div><div class="value" id="elecVal">0.0</div></div></div>
+<div class="hud-card combo"><span style="font-size:20px;">🔥</span><div><div class="label">连击</div><div class="value" id="comboVal">0</div></div></div>
 <div class="hud-card timer"><span style="font-size:20px;">⏱️</span><div><div class="label">剩余</div><div class="value" id="timerVal">60</div></div></div>
 </div>
+
+<!-- 连击中央提示 -->
+<div id="comboFlash"><div class="cf-text" id="comboFlashText"></div></div>
 
 <!-- 返回按钮 -->
 <button class="back-btn" id="backBtn" onclick="goHome()">🏠 返回首页</button>
@@ -135,9 +163,12 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 <h1><span class="title-water">水电</span><span class="title-mid">智能</span><span class="title-elec">管家</span></h1>
 <h2>节约每一滴水，珍惜每一度电</h2>
 <div class="tips">
-<p>🎮 <strong>操作方式：</strong>用鼠标/手指 <strong>点击</strong> 画面中出现的水龙头和电灯</p>
+<p>🎮 <strong>操作方式：</strong>用鼠标/手指 <strong>点击</strong> 画面中出现的物品</p>
 <p>💧 <strong>滴水龙头：</strong>及时点击关闭，每关一个 <strong>+10分</strong>，节水 <strong>5升</strong></p>
 <p>💡 <strong>长亮电灯：</strong>迅速点击熄灭，每关一个 <strong>+10分</strong>，节电 <strong>0.5度</strong></p>
+<p>📺 <span class="tv-tag">未关电视：</span>点击关闭待机电视，每关一个 <strong>+15分</strong>，节电 <strong>1度</strong></p>
+<p>☀️ <span class="solar-tag">太阳能板：</span>稀有奖励！点击拾取，<em>延长5秒时间</em> + <strong>20分</strong></p>
+<p>🔥 <strong>连击系统：</strong>连续修复3个以上物品，触发<em>得分倍率</em>！</p>
 <p>⚠️ <strong>注意：</strong>物品有倒计时条，超时未关将<em>浪费资源</em>并扣分！</p>
 <p>⏱️ <strong>游戏时间：</strong>60秒，争做节能小达人！</p>
 </div>
@@ -157,6 +188,7 @@ body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;u
 <div class="stat"><div class="stat-icon">💧</div><div class="stat-val" id="finalWater">0L</div><div class="stat-label">累计节水</div></div>
 <div class="stat"><div class="stat-icon">⚡</div><div class="stat-val" id="finalElec">0kWh</div><div class="stat-label">累计节电</div></div>
 <div class="stat"><div class="stat-icon">🌍</div><div class="stat-val" id="finalCO2">0kg</div><div class="stat-label">减少碳排</div></div>
+<div class="stat"><div class="stat-icon">🔥</div><div class="stat-val" id="finalMaxCombo">0</div><div class="stat-label">最高连击</div></div>
 </div>
 <div class="eduMsg"><p id="gameOverEdu"></p></div>
 <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
@@ -174,12 +206,15 @@ const W=960,H=640;
 
 let gameState='menu';
 let score=0,waterSaved=0,elecSaved=0,timer=60;
-let items=[],lastTime=0,spawnTimer=0,eduTimer=0;
+let items=[],lastTime=0,spawnTimer=0,eduTimer=0,solarTimer=0;
 let itemIdCounter=0;
+// 连击系统
+let combo=0,comboTimer=0,maxCombo=0;
 
 const itemTypes=[
 {kind:'faucet',icon:'🚰',score:10,resource:'water',amount:5,dangerTime:4.0},
 {kind:'light',icon:'💡',score:10,resource:'elec',amount:0.5,dangerTime:4.5},
+{kind:'tv',icon:'📺',score:15,resource:'elec',amount:1,dangerTime:5.0},
 ];
 
 const eduFacts=[
@@ -203,7 +238,8 @@ const gameOverEduMsgs=[
 ];
 
 function startGame(){
-score=0;waterSaved=0;elecSaved=0;timer=60;spawnTimer=0;eduTimer=0;
+score=0;waterSaved=0;elecSaved=0;timer=60;spawnTimer=0;eduTimer=0;solarTimer=0;
+combo=0;comboTimer=0;maxCombo=0;
 items.forEach(i=>i.el.remove());
 items=[];
 gameState='playing';
@@ -242,10 +278,29 @@ tip.classList.add('show');
 setTimeout(()=>tip.classList.remove('show'),3500);
 }
 
+function getComboMultiplier(){
+if(combo>=10)return 4;
+if(combo>=7)return 3;
+if(combo>=5)return 2;
+if(combo>=3)return 1.5;
+return 1;
+}
+
+function showComboFlash(){
+if(combo>=3){
+const cf=document.getElementById('comboFlash');
+document.getElementById('comboFlashText').textContent=combo+' 连击! ×'+getComboMultiplier();
+cf.classList.remove('show');
+void cf.offsetWidth;
+cf.classList.add('show');
+}
+}
+
 function updateHUD(){
 document.getElementById('scoreVal').textContent=score;
 document.getElementById('waterVal').textContent=Math.round(waterSaved);
 document.getElementById('elecVal').textContent=elecSaved.toFixed(1);
+document.getElementById('comboVal').textContent=combo;
 document.getElementById('timerVal').textContent=Math.ceil(timer);
 }
 
@@ -270,10 +325,14 @@ if(type.kind==='faucet'){
 const drop=document.createElement('div');
 drop.className='water-drop';
 el.appendChild(drop);
-}else{
+}else if(type.kind==='light'){
 const ray=document.createElement('div');
 ray.className='light-ray';
 el.appendChild(ray);
+}else if(type.kind==='tv'){
+const screen=document.createElement('div');
+screen.className='tv-screen';
+el.appendChild(screen);
 }
 
 const bar=document.createElement('div');
@@ -291,12 +350,45 @@ container.appendChild(el);
 items.push({id,type,x,y,el,fill,danger:0,dangerTime:type.dangerTime,fixed:false});
 }
 
+function spawnSolar(){
+const padding=60;
+const x=padding+Math.random()*(W-padding*2);
+const y=80+Math.random()*(H-160);
+const id=++itemIdCounter;
+
+const el=document.createElement('div');
+el.className='game-item solar';
+el.style.left=(x-35)+'px';
+el.style.top=(y-35)+'px';
+
+const glow=document.createElement('div');
+glow.className='solar-glow';
+el.appendChild(glow);
+
+const icon=document.createElement('div');
+icon.className='item-icon';
+icon.textContent='☀️';
+el.appendChild(icon);
+
+el.addEventListener('click',()=>collectSolar(id));
+el.addEventListener('touchend',e=>{e.preventDefault();collectSolar(id);});
+
+container.appendChild(el);
+
+items.push({id,type:{kind:'solar',score:20},x,y,el,fill:null,danger:0,dangerTime:6,fixed:false,isSolar:true});
+}
+
 function fixItem(id){
 const item=items.find(i=>i.id===id);
 if(!item||item.fixed)return;
 item.fixed=true;
 
-score+=item.type.score;
+combo++;
+comboTimer=2.5;
+if(combo>maxCombo)maxCombo=combo;
+const mult=getComboMultiplier();
+const earned=Math.round(item.type.score*mult);
+score+=earned;
 if(item.type.resource==='water')waterSaved+=item.type.amount;
 else elecSaved+=item.type.amount;
 
@@ -305,7 +397,9 @@ const fx=document.createElement('div');
 fx.className='fix-effect';
 fx.style.left=(item.x-35)+'px';
 fx.style.top=(item.y-35)+'px';
-fx.innerHTML='✓ 已关闭';
+let fxText='✓ +'+earned;
+if(mult>1)fxText+=' ×'+mult;
+fx.innerHTML=fxText;
 container.appendChild(fx);
 setTimeout(()=>fx.remove(),800);
 
@@ -315,6 +409,32 @@ item.el.style.opacity='0';
 setTimeout(()=>item.el.remove(),200);
 
 items=items.filter(i=>i.id!==id);
+showComboFlash();
+updateHUD();
+}
+
+function collectSolar(id){
+const item=items.find(i=>i.id===id);
+if(!item||item.fixed)return;
+item.fixed=true;
+
+score+=20;
+timer+=5;
+
+const fx=document.createElement('div');
+fx.className='fix-effect';
+fx.style.left=(item.x-35)+'px';
+fx.style.top=(item.y-35)+'px';
+fx.innerHTML='☀️ +5秒 +20分';
+container.appendChild(fx);
+setTimeout(()=>fx.remove(),800);
+
+item.el.style.transition='transform .3s, opacity .3s';
+item.el.style.transform='scale(2) rotate(720deg)';
+item.el.style.opacity='0';
+setTimeout(()=>item.el.remove(),300);
+
+items=items.filter(i=>i.id!==id);
 updateHUD();
 }
 
@@ -322,6 +442,7 @@ function wasteItem(item){
 item.fixed=true;
 score-=5;
 if(score<0)score=0;
+combo=0;comboTimer=0;
 
 // 浪费特效
 const fx=document.createElement('div');
@@ -341,24 +462,48 @@ updateHUD();
 }
 
 function updateGame(dt){
+// 连击计时
+if(comboTimer>0){
+comboTimer-=dt;
+if(comboTimer<=0){
+combo=0;
+updateHUD();
+}
+}
+
 // 更新物品危险条
 for(let i=items.length-1;i>=0;i--){
 const item=items[i];
 if(item.fixed)continue;
 item.danger+=dt;
 const pct=(item.danger/item.dangerTime)*100;
-item.fill.style.width=Math.min(pct,100)+'%';
+if(item.fill)item.fill.style.width=Math.min(pct,100)+'%';
 if(item.danger>=item.dangerTime){
+if(item.isSolar){
+// 太阳能板消失（不扣分）
+item.el.style.transition='opacity .3s';
+item.el.style.opacity='0';
+setTimeout(()=>item.el.remove(),300);
+items=items.filter(i=>i.id!==item.id);
+}else{
 wasteItem(item);
+}
 }
 }
 
 // 生成物品
 spawnTimer+=dt;
-const spawnRate=Math.max(0.7,1.8-(60-timer)*0.018);
-if(spawnTimer>spawnRate&&items.length<6){
+const spawnRate=Math.max(0.6,1.6-(60-timer)*0.016);
+if(spawnTimer>spawnRate&&items.length<7){
 spawnTimer=0;
 spawnItem();
+}
+
+// 太阳能板（稀有）
+solarTimer+=dt;
+if(solarTimer>15&&items.filter(i=>i.isSolar).length===0){
+solarTimer=0;
+if(Math.random()<0.5)spawnSolar();
 }
 
 // 计时
@@ -394,11 +539,12 @@ document.getElementById('finalElec').textContent=elecSaved.toFixed(1)+'kWh';
 // 碳排放计算：每度电约0.785kg CO2，每吨水约0.91kg CO2
 const co2=(elecSaved*0.785+waterSaved/1000*0.91).toFixed(2);
 document.getElementById('finalCO2').textContent=co2+'kg';
+document.getElementById('finalMaxCombo').textContent=maxCombo;
 
 let rank='';
-if(score>=150)rank='🏆 节能小达人！';
-else if(score>=90)rank='🥇 优秀管家！';
-else if(score>=40)rank='🥈 合格管家';
+if(score>=200)rank='🏆 节能小达人！';
+else if(score>=120)rank='🥇 优秀管家！';
+else if(score>=50)rank='🥈 合格管家';
 else rank='🥉 继续加油！';
 document.getElementById('rankText').textContent=rank;
 document.getElementById('gameOverEdu').textContent=gameOverEduMsgs[Math.floor(Math.random()*gameOverEduMsgs.length)];
