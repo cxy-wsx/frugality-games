@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水电智能管家</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:#0f1923;font-family:'Microsoft YaHei','PingFang SC',sans-serif;user-select:none;position:fixed;top:0;left:0;width:100%;height:100%;}
+#gameContainer{position:absolute;top:50%;left:50%;width:960px;height:640px;box-shadow:0 0 40px rgba(0,0,0,.5);border-radius:12px;overflow:hidden;background:#2a3a4a;transform-origin:center center;transform:translate(-50%,-50%) scale(1);}
+
+/* 房屋背景 */
+#house{position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;padding:4px;}
+.room{position:relative;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.room-label{position:absolute;top:8px;left:12px;font-size:15px;color:rgba(255,255,255,.4);font-weight:bold;letter-spacing:2px;}
+/* 卫生间 */
+.room-bathroom{background:linear-gradient(135deg,#2d4a5e,#1e3a4a);}
+.room-bathroom::after{content:'🚿';position:absolute;font-size:80px;opacity:.08;}
+/* 厨房 */
+.room-kitchen{background:linear-gradient(135deg,#4a3a2a,#3a2a1a);}
+.room-kitchen::after{content:'🍳';position:absolute;font-size:80px;opacity:.08;}
+/* 客厅 */
+.room-livingroom{background:linear-gradient(135deg,#3a4a3a,#2a3a2a);}
+.room-livingroom::after{content:'🛋️';position:absolute;font-size:80px;opacity:.08;}
+/* 卧室 */
+.room-bedroom{background:linear-gradient(135deg,#4a3a4a,#3a2a3a);}
+.room-bedroom::after{content:'🛏️';position:absolute;font-size:80px;opacity:.08;}
+
+/* HUD */
+#hud{position:absolute;top:0;left:0;width:100%;padding:12px 20px;display:none;justify-content:space-between;align-items:center;z-index:50;pointer-events:none;}
+.hud-card{background:rgba(0,0,0,.6);backdrop-filter:blur(6px);border-radius:10px;padding:8px 16px;color:#fff;display:flex;align-items:center;gap:8px;}
+.hud-card .label{font-size:13px;opacity:.7;}
+.hud-card .value{font-size:22px;font-weight:bold;}
+.hud-card.score .value{color:#FFD700;}
+.hud-card.water .value{color:#4FC3F7;}
+.hud-card.elec .value{color:#FFEE58;}
+.hud-card.timer .value{color:#FF8A65;}
+
+/* 游戏物品 */
+.game-item{position:absolute;width:70px;height:70px;cursor:pointer;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:itemAppear .3s ease-out;transition:transform .15s;}
+.game-item:hover{transform:scale(1.15);}
+.game-item:active{transform:scale(.9);}
+@keyframes itemAppear{from{opacity:0;transform:scale(0) rotate(180deg);}to{opacity:1;transform:scale(1) rotate(0);}}
+
+.item-icon{font-size:42px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));}
+/* 水龙头滴水动画 */
+.game-item.faucet .item-icon{animation:faucetShake .3s infinite alternate;}
+@keyframes faucetShake{from{transform:rotate(-3deg);}to{transform:rotate(3deg);}}
+.water-drop{position:absolute;bottom:-5px;width:6px;height:8px;background:linear-gradient(180deg,#4FC3F7,#0288D1);border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;animation:dropFall .8s infinite;opacity:0;}
+@keyframes dropFall{0%{opacity:0;transform:translateY(0) scale(.5);}20%{opacity:1;}100%{opacity:0;transform:translateY(35px) scale(1);}}
+/* 电灯发光动画 */
+.game-item.light .item-icon{animation:lightGlow .5s infinite alternate;text-shadow:0 0 10px #FFEE58,0 0 20px #FFEE58,0 0 30px #FFC107;}
+@keyframes lightGlow{from{filter:drop-shadow(0 0 5px #FFEE58) brightness(1);}to{filter:drop-shadow(0 0 15px #FFEE58) brightness(1.3);}}
+.light-ray{position:absolute;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,238,88,.2),transparent 70%);animation:rayPulse 1s infinite;pointer-events:none;}
+@keyframes rayPulse{0%,100%{transform:scale(1);opacity:.5;}50%{transform:scale(1.2);opacity:.8;}}
+
+/* 危险进度条 */
+.danger-bar{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);width:50px;height:5px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;}
+.danger-fill{height:100%;width:0%;border-radius:3px;transition:width .1s linear;}
+.game-item.faucet .danger-fill{background:linear-gradient(90deg,#4FC3F7,#F44336);}
+.game-item.light .danger-fill{background:linear-gradient(90deg,#FFEE58,#F44336);}
+
+/* 修复效果 */
+.fix-effect{position:absolute;width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:#4CAF50;z-index:20;pointer-events:none;animation:fixAnim .8s ease-out forwards;}
+@keyframes fixAnim{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(2) translateY(-30px);}}
+.waste-effect{position:absolute;width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#F44336;z-index:20;pointer-events:none;animation:wasteAnim .8s ease-out forwards;}
+@keyframes wasteAnim{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.5) translateY(20px);}}
+
+/* 覆盖层 */
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:100;background:rgba(15,25,35,.88);backdrop-filter:blur(6px);}
+.overlay.hidden{display:none;}
+.overlay h1{font-size:46px;margin-bottom:8px;letter-spacing:3px;}
+.overlay h1 .title-water{color:#4FC3F7;text-shadow:0 0 20px rgba(79,195,247,.5);}
+.overlay h1 .title-elec{color:#FFEE58;text-shadow:0 0 20px rgba(255,238,88,.5);}
+.overlay h1 .title-mid{color:#fff;}
+.overlay h2{font-size:22px;color:#aaa;margin-bottom:30px;font-weight:normal;}
+.overlay .tips{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:24px 32px;margin-bottom:28px;max-width:540px;}
+.overlay .tips p{color:#ddd;font-size:16px;line-height:2.2;text-align:left;}
+.overlay .tips p strong{color:#4FC3F7;}
+.overlay .tips p em{color:#FFEE58;font-style:normal;}
+.btn{padding:14px 50px;font-size:22px;font-weight:bold;color:#fff;background:linear-gradient(135deg,#26C6DA,#42A5F5);border:none;border-radius:30px;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 15px rgba(38,198,218,.4);font-family:inherit;}
+.btn:hover{transform:scale(1.05);box-shadow:0 6px 25px rgba(38,198,218,.6);}
+.btn:active{transform:scale(.98);}
+.back-btn{position:absolute;top:10px;right:10px;z-index:55;background:rgba(0,0,0,.55);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:14px;cursor:pointer;pointer-events:auto;font-family:inherit;transition:background .2s;display:none;}
+.back-btn:hover{background:rgba(0,0,0,.8);}
+/* 科普弹窗 */
+#eduTip{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);border-radius:12px;padding:14px 28px;z-index:60;text-align:center;max-width:500px;opacity:0;pointer-events:none;transition:opacity .4s;box-shadow:0 0 30px rgba(0,0,0,.3);}
+#eduTip.show{opacity:1;}
+#eduTip p{font-size:15px;color:#333;line-height:1.6;}
+#eduTip .source{font-size:12px;color:#888;margin-top:6px;}
+
+/* 游戏结束 */
+#gameOverBox{text-align:center;}
+#gameOverBox .finalScore{font-size:56px;color:#FFD700;text-shadow:2px 2px 0 #B8860B;margin:10px 0;}
+#gameOverBox .stats{display:flex;gap:30px;justify-content:center;margin:20px 0;}
+#gameOverBox .stat{background:rgba(255,255,255,.06);border-radius:10px;padding:16px 28px;}
+#gameOverBox .stat .stat-icon{font-size:32px;}
+#gameOverBox .stat .stat-val{font-size:24px;font-weight:bold;color:#fff;margin-top:4px;}
+#gameOverBox .stat .stat-label{font-size:13px;color:#aaa;margin-top:2px;}
+#gameOverBox .rank{font-size:26px;color:#fff;margin-bottom:8px;}
+#gameOverBox .eduMsg{background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.25);border-radius:10px;padding:15px 25px;margin:16px auto;max-width:500px;}
+#gameOverBox .eduMsg p{color:#4FC3F7;font-size:16px;line-height:1.8;}
+
+/* 资源浪费警告 */
+.waste-warning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;font-weight:bold;color:#F44336;text-shadow:0 0 10px rgba(244,67,54,.5);z-index:55;pointer-events:none;animation:warningFlash .6s ease-out forwards;}
+@keyframes warningFlash{0%{opacity:0;transform:translate(-50%,-50%) scale(.5);}30%{opacity:1;transform:translate(-50%,-50%) scale(1.2);}100%{opacity:0;transform:translate(-50%,-50%) scale(1);}}
+</style>
+</head>
+<body>
+<div id="gameContainer">
+<div id="house">
+<div class="room room-bathroom"><span class="room-label">卫生间</span></div>
+<div class="room room-kitchen"><span class="room-label">厨房</span></div>
+<div class="room room-livingroom"><span class="room-label">客厅</span></div>
+<div class="room room-bedroom"><span class="room-label">卧室</span></div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+<div class="hud-card score"><span style="font-size:20px;">⭐</span><div><div class="label">得分</div><div class="value" id="scoreVal">0</div></div></div>
+<div class="hud-card water"><span style="font-size:20px;">💧</span><div><div class="label">节水(L)</div><div class="value" id="waterVal">0</div></div></div>
+<div class="hud-card elec"><span style="font-size:20px;">⚡</span><div><div class="label">节电(kWh)</div><div class="value" id="elecVal">0.0</div></div></div>
+<div class="hud-card timer"><span style="font-size:20px;">⏱️</span><div><div class="label">剩余</div><div class="value" id="timerVal">60</div></div></div>
+</div>
+
+<!-- 返回按钮 -->
+<button class="back-btn" id="backBtn" onclick="goHome()">🏠 返回首页</button>
+
+<!-- 科普弹窗 -->
+<div id="eduTip"><p id="eduText"></p><div class="source">—— 勤俭节约科普小知识</div></div>
+
+<!-- 开始界面 -->
+<div class="overlay" id="startScreen">
+<h1><span class="title-water">水电</span><span class="title-mid">智能</span><span class="title-elec">管家</span></h1>
+<h2>节约每一滴水，珍惜每一度电</h2>
+<div class="tips">
+<p>🎮 <strong>操作方式：</strong>用鼠标/手指 <strong>点击</strong> 画面中出现的水龙头和电灯</p>
+<p>💧 <strong>滴水龙头：</strong>及时点击关闭，每关一个 <strong>+10分</strong>，节水 <strong>5升</strong></p>
+<p>💡 <strong>长亮电灯：</strong>迅速点击熄灭，每关一个 <strong>+10分</strong>，节电 <strong>0.5度</strong></p>
+<p>⚠️ <strong>注意：</strong>物品有倒计时条，超时未关将<em>浪费资源</em>并扣分！</p>
+<p>⏱️ <strong>游戏时间：</strong>60秒，争做节能小达人！</p>
+</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+<button class="btn" onclick="startGame()">开始节能</button>
+<button class="btn" onclick="goHome()" style="background:linear-gradient(135deg,#666,#888);box-shadow:0 4px 15px rgba(100,100,100,.4);">🏠 返回首页</button>
+</div>
+</div>
+
+<!-- 游戏结束界面 -->
+<div class="overlay hidden" id="gameOverScreen">
+<div id="gameOverBox">
+<h1 style="font-size:36px;color:#fff;">游戏结束</h1>
+<div class="finalScore" id="finalScore">0</div>
+<div class="rank" id="rankText"></div>
+<div class="stats">
+<div class="stat"><div class="stat-icon">💧</div><div class="stat-val" id="finalWater">0L</div><div class="stat-label">累计节水</div></div>
+<div class="stat"><div class="stat-icon">⚡</div><div class="stat-val" id="finalElec">0kWh</div><div class="stat-label">累计节电</div></div>
+<div class="stat"><div class="stat-icon">🌍</div><div class="stat-val" id="finalCO2">0kg</div><div class="stat-label">减少碳排</div></div>
+</div>
+<div class="eduMsg"><p id="gameOverEdu"></p></div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+<button class="btn" onclick="startGame()">再玩一次</button>
+<button class="btn" onclick="goHome()" style="background:linear-gradient(135deg,#666,#888);box-shadow:0 4px 15px rgba(100,100,100,.4);">🏠 返回首页</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const container=document.getElementById('gameContainer');
+const house=document.getElementById('house');
+const W=960,H=640;
+
+let gameState='menu';
+let score=0,waterSaved=0,elecSaved=0,timer=60;
+let items=[],lastTime=0,spawnTimer=0,eduTimer=0;
+let itemIdCounter=0;
+
+const itemTypes=[
+{kind:'faucet',icon:'🚰',score:10,resource:'water',amount:5,dangerTime:4.0},
+{kind:'light',icon:'💡',score:10,resource:'elec',amount:0.5,dangerTime:4.5},
+];
+
+const eduFacts=[
+'一个滴水的水龙头每天可浪费70升水，一个月就是2吨！',
+'离开房间随手关灯，每户家庭每年可节电约50度。',
+'使用节水龙头可节省30%以上的用水量。',
+'电视机待机也在耗电，拔掉插头才能真正节能。',
+'全国14亿人每人节约一度电，就是14亿度电！',
+'洗澡时缩短1分钟，每年可节水近3000升。',
+'LED灯比白炽灯节能80%以上，寿命更长。',
+'习近平指出：推动能源消费革命，抑制不合理能源消费。',
+'空调温度每调高1度，可节电约7%-10%。',
+'一滴水微不足道，但滴水成河，聚沙成塔。',
+];
+
+const gameOverEduMsgs=[
+'感谢你为节能减排做出的贡献！节约资源，从我做起。',
+'太棒了！你在生活中也要随手关灯、关紧水龙头哦！',
+'节能达人就是你！把节约理念传递给身边的每一个人。',
+'地球的资源有限，你的每一次节约都在保护我们的家园。',
+];
+
+function startGame(){
+score=0;waterSaved=0;elecSaved=0;timer=60;spawnTimer=0;eduTimer=0;
+items.forEach(i=>i.el.remove());
+items=[];
+gameState='playing';
+document.getElementById('startScreen').classList.add('hidden');
+document.getElementById('gameOverScreen').classList.add('hidden');
+document.getElementById('hud').style.display='flex';
+document.getElementById('backBtn').style.display='block';
+updateHUD();
+scheduleEduTip();
+lastTime=performance.now();
+requestAnimationFrame(gameLoop);
+}
+
+function goHome(){window.location.href='index.html';}
+
+// 响应式缩放 - 确保画面始终居中且完整显示
+function fitContainer(){
+const cw=window.innerWidth,ch=window.innerHeight;
+const scale=Math.min(cw/960,ch/640);
+const container=document.getElementById('gameContainer');
+container.style.transform='translate(-50%,-50%) scale('+scale+')';
+}
+window.addEventListener('resize',fitContainer);
+window.addEventListener('orientationchange',function(){setTimeout(fitContainer,200);});
+fitContainer();
+
+function scheduleEduTip(){
+eduTimer=7+Math.random()*6;
+}
+
+function showEduTip(){
+const fact=eduFacts[Math.floor(Math.random()*eduFacts.length)];
+document.getElementById('eduText').textContent=fact;
+const tip=document.getElementById('eduTip');
+tip.classList.add('show');
+setTimeout(()=>tip.classList.remove('show'),3500);
+}
+
+function updateHUD(){
+document.getElementById('scoreVal').textContent=score;
+document.getElementById('waterVal').textContent=Math.round(waterSaved);
+document.getElementById('elecVal').textContent=elecSaved.toFixed(1);
+document.getElementById('timerVal').textContent=Math.ceil(timer);
+}
+
+function spawnItem(){
+const type=itemTypes[Math.floor(Math.random()*itemTypes.length)];
+const padding=60;
+const x=padding+Math.random()*(W-padding*2);
+const y=80+Math.random()*(H-160);
+const id=++itemIdCounter;
+
+const el=document.createElement('div');
+el.className='game-item '+type.kind;
+el.style.left=(x-35)+'px';
+el.style.top=(y-35)+'px';
+
+const icon=document.createElement('div');
+icon.className='item-icon';
+icon.textContent=type.icon;
+el.appendChild(icon);
+
+if(type.kind==='faucet'){
+const drop=document.createElement('div');
+drop.className='water-drop';
+el.appendChild(drop);
+}else{
+const ray=document.createElement('div');
+ray.className='light-ray';
+el.appendChild(ray);
+}
+
+const bar=document.createElement('div');
+bar.className='danger-bar';
+const fill=document.createElement('div');
+fill.className='danger-fill';
+bar.appendChild(fill);
+el.appendChild(bar);
+
+el.addEventListener('click',()=>fixItem(id));
+el.addEventListener('touchend',e=>{e.preventDefault();fixItem(id);});
+
+container.appendChild(el);
+
+items.push({id,type,x,y,el,fill,danger:0,dangerTime:type.dangerTime,fixed:false});
+}
+
+function fixItem(id){
+const item=items.find(i=>i.id===id);
+if(!item||item.fixed)return;
+item.fixed=true;
+
+score+=item.type.score;
+if(item.type.resource==='water')waterSaved+=item.type.amount;
+else elecSaved+=item.type.amount;
+
+// 修复特效
+const fx=document.createElement('div');
+fx.className='fix-effect';
+fx.style.left=(item.x-35)+'px';
+fx.style.top=(item.y-35)+'px';
+fx.innerHTML='✓ 已关闭';
+container.appendChild(fx);
+setTimeout(()=>fx.remove(),800);
+
+item.el.style.transition='transform .2s, opacity .2s';
+item.el.style.transform='scale(0) rotate(360deg)';
+item.el.style.opacity='0';
+setTimeout(()=>item.el.remove(),200);
+
+items=items.filter(i=>i.id!==id);
+updateHUD();
+}
+
+function wasteItem(item){
+item.fixed=true;
+score-=5;
+if(score<0)score=0;
+
+// 浪费特效
+const fx=document.createElement('div');
+fx.className='waste-effect';
+fx.style.left=(item.x-35)+'px';
+fx.style.top=(item.y-35)+'px';
+fx.innerHTML='⚠ 浪费!';
+container.appendChild(fx);
+setTimeout(()=>fx.remove(),800);
+
+item.el.style.transition='opacity .3s';
+item.el.style.opacity='0';
+setTimeout(()=>item.el.remove(),300);
+
+items=items.filter(i=>i.id!==item.id);
+updateHUD();
+}
+
+function updateGame(dt){
+// 更新物品危险条
+for(let i=items.length-1;i>=0;i--){
+const item=items[i];
+if(item.fixed)continue;
+item.danger+=dt;
+const pct=(item.danger/item.dangerTime)*100;
+item.fill.style.width=Math.min(pct,100)+'%';
+if(item.danger>=item.dangerTime){
+wasteItem(item);
+}
+}
+
+// 生成物品
+spawnTimer+=dt;
+const spawnRate=Math.max(0.7,1.8-(60-timer)*0.018);
+if(spawnTimer>spawnRate&&items.length<6){
+spawnTimer=0;
+spawnItem();
+}
+
+// 计时
+timer-=dt;
+if(timer<=0){timer=0;endGame();return;}
+
+// 科普
+eduTimer-=dt;
+if(eduTimer<=0){showEduTip();scheduleEduTip();}
+
+updateHUD();
+}
+
+function gameLoop(timestamp){
+if(gameState!=='playing')return;
+const dt=Math.min((timestamp-lastTime)/1000,0.05);
+lastTime=timestamp;
+updateGame(dt);
+requestAnimationFrame(gameLoop);
+}
+
+function endGame(){
+gameState='gameover';
+document.getElementById('hud').style.display='none';
+document.getElementById('backBtn').style.display='none';
+// 清理剩余物品
+items.forEach(i=>i.el.remove());
+items=[];
+
+document.getElementById('finalScore').textContent=score;
+document.getElementById('finalWater').textContent=Math.round(waterSaved)+'L';
+document.getElementById('finalElec').textContent=elecSaved.toFixed(1)+'kWh';
+// 碳排放计算：每度电约0.785kg CO2，每吨水约0.91kg CO2
+const co2=(elecSaved*0.785+waterSaved/1000*0.91).toFixed(2);
+document.getElementById('finalCO2').textContent=co2+'kg';
+
+let rank='';
+if(score>=150)rank='🏆 节能小达人！';
+else if(score>=90)rank='🥇 优秀管家！';
+else if(score>=40)rank='🥈 合格管家';
+else rank='🥉 继续加油！';
+document.getElementById('rankText').textContent=rank;
+document.getElementById('gameOverEdu').textContent=gameOverEduMsgs[Math.floor(Math.random()*gameOverEduMsgs.length)];
+document.getElementById('gameOverScreen').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
