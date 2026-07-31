@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>勤俭节约科普互动游戏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;min-height:100vh;background:linear-gradient(135deg,#0f1923 0%,#1a2a3a 50%,#0f1923 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;overflow-x:hidden;color:#fff;}
+/* 背景装饰 */
+body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(255,215,0,.06),transparent 70%);border-radius:50%;pointer-events:none;}
+body::after{content:'';position:fixed;bottom:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(79,195,247,.06),transparent 70%);border-radius:50%;pointer-events:none;}
+
+.header{text-align:center;margin-bottom:50px;z-index:1;}
+.header .subtitle{font-size:18px;color:#FFD700;letter-spacing:8px;margin-bottom:8px;font-weight:300;}
+.header h1{font-size:48px;letter-spacing:6px;background:linear-gradient(135deg,#FFD700,#FF8A65,#4FC3F7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 0 40px rgba(255,215,0,.2);}
+.header .date{font-size:16px;color:#888;margin-top:12px;}
+.header .divider{width:60px;height:3px;background:linear-gradient(90deg,transparent,#FFD700,transparent);margin:20px auto;}
+.header .slogan{font-size:20px;color:#ccc;margin-top:16px;letter-spacing:2px;}
+
+.games{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;z-index:1;}
+
+.game-card{width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s,border-color .3s;text-decoration:none;display:block;}
+.game-card:hover{transform:translateY(-8px);box-shadow:0 20px 50px rgba(0,0,0,.4);border-color:rgba(255,215,0,.3);}
+
+.card-banner{height:200px;display:flex;align-items:center;justify-content:center;font-size:100px;position:relative;overflow:hidden;}
+.card-banner.game1{background:linear-gradient(135deg,#2d5a1e,#4a8a35,#7CC576);}
+.card-banner.game2{background:linear-gradient(135deg,#1a3a5a,#2d5a8a,#4FC3F7);}
+.card-banner .banner-icon{filter:drop-shadow(0 4px 10px rgba(0,0,0,.3));animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.card-banner .banner-deco{position:absolute;font-size:30px;opacity:.3;animation:float 4s ease-in-out infinite reverse;}
+.card-banner .deco1{top:20px;left:30px;}
+.card-banner .deco2{bottom:20px;right:30px;animation-delay:1s;}
+
+.card-body{padding:28px;}
+.card-body h2{font-size:26px;margin-bottom:8px;letter-spacing:2px;}
+.card-body .card-sub{font-size:14px;color:#888;margin-bottom:16px;}
+.card-body .card-desc{font-size:15px;color:#bbb;line-height:1.8;margin-bottom:20px;}
+.card-body .card-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.card-body .tag{padding:4px 12px;border-radius:20px;font-size:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);}
+.card-body .play-btn{width:100%;padding:14px;font-size:18px;font-weight:bold;color:#fff;border:none;border-radius:30px;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:4px;}
+.game-card.game1 .play-btn{background:linear-gradient(135deg,#FF6B35,#F7931E);}
+.game-card.game1:hover .play-btn{box-shadow:0 4px 20px rgba(255,107,53,.4);}
+.game-card.game2 .play-btn{background:linear-gradient(135deg,#26C6DA,#42A5F5);}
+.game-card.game2:hover .play-btn{box-shadow:0 4px 20px rgba(38,198,218,.4);}
+
+.footer{text-align:center;margin-top:50px;color:#555;font-size:14px;z-index:1;}
+.footer p{margin:4px 0;}
+.footer .highlight{color:#FFD700;}
+
+/* 主题科普 */
+.theme-info{max-width:800px;margin:40px auto 0;text-align:center;z-index:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:30px;}
+.theme-info h3{font-size:20px;color:#FFD700;margin-bottom:16px;letter-spacing:2px;}
+.theme-info p{font-size:15px;color:#aaa;line-height:2;}
+.theme-info .facts{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:20px;}
+.theme-info .fact{background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.12);border-radius:10px;padding:12px 20px;min-width:160px;}
+.theme-info .fact .fact-num{font-size:28px;font-weight:bold;color:#FFD700;}
+.theme-info .fact .fact-label{font-size:13px;color:#888;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+<div class="subtitle">勤俭节约 · 科普互动</div>
+<h1>节能小卫士</h1>
+<div class="divider"></div>
+<div class="slogan">🎮 玩游戏 · 学知识 · 践行节约 🎮</div>
+<div class="date">活动日期：8月15日</div>
+</div>
+
+<div class="games">
+<a class="game-card game1" href="粮仓守护大作战.html">
+<div class="card-banner game1">
+<span class="banner-deco deco1">🌾</span>
+<span class="banner-icon">👨‍🌾</span>
+<span class="banner-deco deco2">🐀</span>
+</div>
+<div class="card-body">
+<h2>粮仓守护大作战</h2>
+<div class="card-sub">守护粮食 · 拒绝浪费</div>
+<p class="card-desc">操控守护者，驱赶来犯的老鼠和害虫，保护粮仓中的每一粒粮食。在紧张刺激的攻防中，感受粮食的珍贵与来之不易。</p>
+<div class="card-tags">
+<span class="tag">⭐ 键盘操作</span>
+<span class="tag">⚡ 60秒挑战</span>
+<span class="tag">🏆 排名系统</span>
+<span class="tag">📚 节粮科普</span>
+</div>
+<button class="play-btn">开始游戏</button>
+</div>
+</a>
+
+<a class="game-card game2" href="水电智能管家.html">
+<div class="card-banner game2">
+<span class="banner-deco deco1">💧</span>
+<span class="banner-icon">💡</span>
+<span class="banner-deco deco2">⚡</span>
+</div>
+<div class="card-body">
+<h2>水电智能管家</h2>
+<div class="card-sub">节约水电 · 绿色生活</div>
+<p class="card-desc">家中水龙头不停滴水、电灯长亮不关，快来点击关闭它们！争分夺秒间，体会节约每一滴水、每一度电的重要意义。</p>
+<div class="card-tags">
+<span class="tag">🖱️ 点击操作</span>
+<span class="tag">⚡ 60秒挑战</span>
+<span class="tag">🌍 碳排计算</span>
+<span class="tag">📚 节能科普</span>
+</div>
+<button class="play-btn">开始游戏</button>
+</div>
+</a>
+</div>
+
+<div class="theme-info">
+<h3>🌱 勤俭节约，从我做起</h3>
+<p>勤俭节约是中华民族的传统美德。习近平总书记强调："坚决制止餐饮浪费行为，切实培养节约习惯。"<br>通过互动游戏，让节约理念深入人心，让每个人成为勤俭节约的践行者和传播者。</p>
+<div class="facts">
+<div class="fact"><div class="fact-num">13亿吨</div><div class="fact-label">全球年粮食浪费量</div></div>
+<div class="fact"><div class="fact-num">70升</div><div class="fact-label">滴水龙头日浪费水量</div></div>
+<div class="fact"><div class="fact-num">8亿人</div><div class="fact-label">全球饥饿人口</div></div>
+<div class="fact"><div class="fact-num">50度</div><div class="fact-label">家庭年关灯节电量</div></div>
+</div>
+</div>
+
+<div class="footer">
+<p><span class="highlight">使用说明：</span>双击 <strong>index.html</strong> 打开本页面，点击游戏卡片即可开始游玩</p>
+<p>建议使用 Chrome / Edge 浏览器获得最佳体验 · 无需联网</p>
+</div>
+
+</body>
+</html>
